@@ -1,0 +1,723 @@
+<html lang="zh-TW">
+<head>
+<meta name="robots" content="noindex, nofollow, noai, noimageai">
+<meta name="googlebot" content="noindex, nofollow, noai">
+<meta name="GPTBot" content="noindex, nofollow">
+<meta name="ChatGPT-User" content="noindex, nofollow">
+<meta name="ClaudeBot" content="noindex, nofollow">
+<meta name="PerplexityBot" content="noindex, nofollow">
+
+<script>
+  // 禁右
+  document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+  });
+
+  // 禁F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+S
+  document.addEventListener('keydown', function(e) {
+    if (
+      e.key === 'F12' ||
+      (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j')) ||
+      (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))
+    ) {
+      e.preventDefault();
+      return false;
+    }
+  });
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的他媽哥治</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #fbcfe8;
+            background-image: radial-gradient(#f472b6 1.5px, transparent 1.5px);
+            background-size: 30px 30px;
+            touch-action: manipulation; /* 防止手機點擊放大的預設行為 */
+        }
+
+        /* --- UI 樣式 --- */
+        .game-btn {
+            transition: transform 0.1s, box-shadow 0.1s, filter 0.1s;
+            box-shadow: 0 4px 0 #00000033;
+        }
+        .game-btn:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #00000033;
+        }
+        .game-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: 0 2px 0 #00000033;
+            transform: translateY(2px);
+            filter: grayscale(100%);
+        }
+        .screen-shadow { box-shadow: inset 0 0 15px rgba(0,0,0,0.2); }
+        .stat-bar { transition: width 0.3s ease, background-color 0.3s ease; }
+
+        /* --- 房間背景 --- */
+        .room-wall {
+            background-color: #fef08a;
+            height: 65%; width: 100%; position: absolute; top: 0;
+            transition: background-color 1s, filter 1s;
+            border-bottom: 4px solid #d97706;
+        }
+        .room-floor {
+            background-color: #fcd34d;
+            background-image: repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(0,0,0,0.05) 20px, rgba(0,0,0,0.05) 22px);
+            height: 35%; width: 100%; position: absolute; bottom: 0;
+            transition: background-color 1s, filter 1s;
+        }
+        .window {
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
+            width: 70px; height: 70px; background: #bae6fd;
+            border: 4px solid white; border-radius: 6px;
+            transition: background-color 1s;
+        }
+        .window::before { content: ''; position: absolute; background: white; width: 100%; height: 4px; top: 50%; left: 0; transform: translateY(-50%); }
+        .window::after { content: ''; position: absolute; background: white; width: 4px; height: 100%; left: 50%; top: 0; transform: translateX(-50%); }
+       
+        /* --- 動畫特效 --- */
+        #pet-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: left 1s ease-in-out, bottom 1s ease-in-out;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+       
+        .flip-wrapper { transition: transform 0.3s; }
+        .is-flipped { transform: scaleX(-1); }
+
+        @keyframes breathe {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(0.95) translateY(3px); }
+        }
+        .pet-idle { animation: breathe 2s infinite ease-in-out; }
+
+        /* 吃東西咀嚼 (控制下嘴巴) */
+        .is-eating #beak-bottom { animation: chew 0.25s infinite; }
+        @keyframes chew {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(3px) scaleY(1.5); }
+        }
+
+        /* 玩耍拍翅膀與跳躍 */
+        .is-playing #wing-l { animation: flap-l 0.2s infinite alternate; }
+        .is-playing #wing-r { animation: flap-r 0.2s infinite alternate; }
+        .is-playing .pet-idle { animation: happy-bounce 0.4s infinite alternate !important; }
+
+        @keyframes flap-l { 0% { transform: rotate(0deg); } 100% { transform: rotate(40deg); } }
+        @keyframes flap-r { 0% { transform: rotate(0deg); } 100% { transform: rotate(-40deg); } }
+        @keyframes happy-bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-12px); } }
+
+        /* 蒼蠅飛舞動畫 */
+        @keyframes buzz {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+            25% { transform: translate(30px, -40px) scale(1.2) rotate(15deg); }
+            50% { transform: translate(-20px, -20px) scale(0.9) rotate(-10deg); }
+            75% { transform: translate(-40px, -60px) scale(1.1) rotate(20deg); }
+            100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+        }
+        .fly-anim { animation: buzz 4s infinite ease-in-out alternate; pointer-events: none; }
+        .poop-anim { animation: dropIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes dropIn { from { transform: translateY(-20px) scale(0); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+        /* --- SVG 狀態顯示邏輯 --- */
+        #eyes g, #pet-svg .cheek, #pet-svg .ghost-tail { display: none; }
+        #pet-svg[data-state="idle"] #eye-idle { display: block; }
+        #pet-svg[data-state="happy"] #eye-happy, #pet-svg[data-state="happy"] .cheek { display: block; }
+        #pet-svg[data-state="eating"] #eye-happy, #pet-svg[data-state="eating"] .cheek { display: block; }
+        #pet-svg[data-state="playing"] #eye-happy, #pet-svg[data-state="playing"] .cheek { display: block; }
+        #pet-svg[data-state="sleep"] #eye-sleep { display: block; }
+        #pet-svg[data-state="sad"] #eye-sad { display: block; }
+        #pet-svg[data-state="sick"] #eye-sad { display: block; }
+       
+        /* 死亡狀態：X_X 眼睛 */
+        #pet-svg[data-state="dead"] #eye-dead, #pet-svg[data-state="dead"] .ghost-tail { display: block; }
+        #pet-svg .body-color { fill: #FCE928; transition: fill 0.5s; }
+        #pet-svg[data-state="dead"] .body-color { fill: #cbd5e1; } /* 死亡變灰 */
+        #pet-svg[data-state="sick"] .body-color { fill: #d9f99d; } /* 生病泛綠 */
+        #pet-svg[data-state="dead"] .legs { display: none; } /* 死亡隱藏腳 */
+
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-2 sm:p-4">
+
+    <!-- 遊戲機本體 -->
+    <div class="relative w-full max-w-md bg-pink-400 rounded-[3rem] p-4 sm:p-6 shadow-2xl border-8 border-pink-500 flex flex-col items-center">
+        <!-- 頂部聽筒裝飾 -->
+        <div class="w-16 h-2 bg-pink-600 rounded-full mb-4 opacity-50"></div>
+
+        <!-- 螢幕區 -->
+        <div id="screen-container" class="w-full bg-blue-50 rounded-2xl border-8 border-gray-700 h-72 sm:h-80 relative overflow-hidden flex flex-col screen-shadow">
+           
+            <!-- 狀態條 -->
+            <div class="p-2 sm:p-3 bg-white bg-opacity-90 grid grid-cols-2 gap-2 text-[10px] sm:text-xs font-bold text-gray-700 z-30 border-b-2 border-gray-200 relative shadow-sm rounded-t-xl">
+                <div class="flex items-center space-x-1"><span>🍖</span><div class="w-full bg-gray-200 rounded-full h-2 sm:h-2.5"><div id="bar-hunger" class="bg-green-500 h-2 sm:h-2.5 rounded-full stat-bar" style="width: 100%"></div></div></div>
+                <div class="flex items-center space-x-1"><span>🎾</span><div class="w-full bg-gray-200 rounded-full h-2 sm:h-2.5"><div id="bar-happiness" class="bg-green-500 h-2 sm:h-2.5 rounded-full stat-bar" style="width: 100%"></div></div></div>
+                <div class="flex items-center space-x-1"><span>💊</span><div class="w-full bg-gray-200 rounded-full h-2 sm:h-2.5"><div id="bar-health" class="bg-green-500 h-2 sm:h-2.5 rounded-full stat-bar" style="width: 100%"></div></div></div>
+                <div class="flex items-center space-x-1"><span>💤</span><div class="w-full bg-gray-200 rounded-full h-2 sm:h-2.5"><div id="bar-sleep" class="bg-green-500 h-2 sm:h-2.5 rounded-full stat-bar" style="width: 100%"></div></div></div>
+            </div>
+
+            <!-- 遊戲畫面 -->
+            <div class="flex-1 relative overflow-hidden" id="room-area">
+                <!-- 房間背景 -->
+                <div class="room-wall" id="room-wall">
+                    <div class="window"></div>
+                    <div class="absolute bottom-0 left-2 text-3xl z-0">🪴</div>
+                    <div class="absolute -bottom-4 right-2 text-3xl z-0">🛏️</div>
+                </div>
+                <div class="room-floor" id="room-floor">
+                    <div class="absolute top-2 left-1/2 -translate-x-1/2 w-32 h-10 bg-pink-200 rounded-[50%] border-2 border-dashed border-pink-400 z-0"></div>
+                </div>
+               
+                <!-- 寵物與對話框 -->
+                <div id="pet-container">
+                    <div id="status-message" class="mb-2 text-xs font-bold text-gray-600 bg-white bg-opacity-95 px-3 py-1 rounded-full shadow-sm whitespace-nowrap z-20 transition-opacity">
+                        你好呀！
+                    </div>
+                   
+                    <div id="pet-flip-wrapper" class="flip-wrapper">
+                        <!-- 小雞 SVG -->
+                        <svg id="pet-svg" class="w-20 h-20 sm:w-24 sm:h-24 pet-idle drop-shadow-md relative z-10" viewBox="0 0 100 100" data-state="idle">
+                           
+                            <!-- 腳 (legs) -->
+                            <g class="legs">
+                                <path d="M 35 75 L 35 92 L 28 97 M 35 92 L 42 97" stroke="#4A3018" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                <path d="M 65 75 L 65 92 L 58 97 M 65 92 L 72 97" stroke="#4A3018" stroke-width="3" fill="none" stroke-linecap="round"/>
+                            </g>
+
+                            <!-- 右手 (wing-r) -->
+                            <path id="wing-r" d="M 75 55 Q 85 50 85 65 Q 75 60 75 55" fill="#FCE928" stroke="#4A3018" stroke-width="3" stroke-linecap="round" transform-origin="75px 55px" />
+                           
+                            <!-- 死亡幽靈尾巴 -->
+                            <path class="ghost-tail" d="M 30 75 Q 50 95 70 75 Q 80 85 75 90 Q 50 105 25 90 Q 20 85 30 75" fill="#cbd5e1" stroke="#4A3018" stroke-width="3"/>
+
+                            <!-- 身體 -->
+                            <ellipse class="body-color" cx="50" cy="55" rx="35" ry="30" stroke="#4A3018" stroke-width="3"/>
+                           
+                            <!-- 呆毛 -->
+                            <path d="M 45 25 Q 48 15 50 20 M 52 24 Q 58 16 55 22" stroke="#4A3018" stroke-width="3" fill="none" stroke-linecap="round"/>
+                           
+                            <!-- 左手 (wing-l) -->
+                            <path id="wing-l" d="M 25 55 Q 15 50 15 65 Q 25 60 25 55" fill="#FCE928" stroke="#4A3018" stroke-width="3" stroke-linecap="round" transform-origin="25px 55px" />
+
+                            <!-- 臉部特徵 -->
+                            <g id="face">
+                                <!-- 腮紅 -->
+                                <g class="cheek">
+                                    <ellipse cx="28" cy="55" rx="5" ry="2.5" fill="#FCA5A5" opacity="0.8"/>
+                                    <ellipse cx="72" cy="55" rx="5" ry="2.5" fill="#FCA5A5" opacity="0.8"/>
+                                </g>
+
+                                <!-- 眼睛 (eyes) -->
+                                <g id="eyes">
+                                    <g id="eye-idle">
+                                        <circle cx="35" cy="46" r="3.5" fill="#4A3018"/>
+                                        <circle cx="65" cy="46" r="3.5" fill="#4A3018"/>
+                                    </g>
+                                    <g id="eye-happy">
+                                        <path d="M 31 48 Q 35 42 39 48" stroke="#4A3018" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                        <path d="M 61 48 Q 65 42 69 48" stroke="#4A3018" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                    </g>
+                                    <g id="eye-sleep">
+                                        <path d="M 30 48 L 40 48" stroke="#4A3018" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                        <path d="M 60 48 L 70 48" stroke="#4A3018" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                    </g>
+                                    <g id="eye-sad">
+                                        <path d="M 31 46 Q 35 44 39 49" stroke="#4A3018" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                        <path d="M 61 49 Q 65 44 69 46" stroke="#4A3018" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                        <!-- 眼淚 -->
+                                        <circle cx="35" cy="53" r="1.5" fill="#60A5FA"/>
+                                        <circle cx="65" cy="53" r="1.5" fill="#60A5FA"/>
+                                    </g>
+                                    <g id="eye-dead">
+                                        <!-- X_X 眼睛 -->
+                                        <path d="M 31 43 L 39 51 M 39 43 L 31 51" stroke="#4A3018" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                        <path d="M 61 43 L 69 51 M 69 43 L 61 51" stroke="#4A3018" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                    </g>
+                                </g>
+
+                                <!-- 嘴巴 (beak) -->
+                                <g id="beak">
+                                    <!-- 嘴巴上半部 -->
+                                    <path id="beak-top" d="M 40 54 Q 50 49 60 54 Q 50 56 40 54 Z" fill="#F97316" stroke="#4A3018" stroke-width="2" stroke-linejoin="round"/>
+                                    <!-- 嘴巴下半部 (會動) -->
+                                    <path id="beak-bottom" d="M 42 55 Q 50 61 58 55 Z" fill="#EA580C" stroke="#4A3018" stroke-width="2" stroke-linejoin="round" transform-origin="50px 55px"/>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 遊戲結束畫面 (Game Over Modal) -->
+            <div id="game-over-screen" class="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center hidden z-50 text-white backdrop-blur-sm">
+                <div class="text-6xl mb-2">👼</div>
+                <h2 class="text-2xl font-black text-red-400 mb-1 tracking-wide">GAME OVER</h2>
+                <p id="death-reason" class="text-sm mb-6 text-gray-200">死因: 未知</p>
+                <button onclick="restartGame()" class="px-8 py-3 bg-yellow-400 text-yellow-900 font-bold rounded-full hover:bg-yellow-300 shadow-[0_4px_0_#b45309] active:shadow-none active:translate-y-1 transition-all">
+                    重新開始 (Restart)
+                </button>
+            </div>
+        </div>
+
+        <!-- 按鈕區 -->
+        <div class="w-full mt-4 flex flex-wrap justify-center gap-2 sm:gap-3">
+            <button onclick="interact('feed')" class="game-btn w-[30%] bg-orange-300 text-orange-900 text-xs sm:text-sm font-bold py-2 sm:py-3 rounded-xl flex flex-col items-center">
+                <span class="text-lg sm:text-xl mb-1">🍔</span><span>餵食</span>
+            </button>
+            <button onclick="interact('play')" class="game-btn w-[30%] bg-blue-300 text-blue-900 text-xs sm:text-sm font-bold py-2 sm:py-3 rounded-xl flex flex-col items-center">
+                <span class="text-lg sm:text-xl mb-1">⚽</span><span>玩耍</span>
+            </button>
+            <button onclick="interact('clean')" class="game-btn w-[30%] bg-teal-300 text-teal-900 text-xs sm:text-sm font-bold py-2 sm:py-3 rounded-xl flex flex-col items-center">
+                <span class="text-lg sm:text-xl mb-1">🧹</span><span>清潔</span>
+            </button>
+            <button onclick="interact('heal')" class="game-btn w-[46%] bg-green-300 text-green-900 text-xs sm:text-sm font-bold py-2 sm:py-3 rounded-xl flex flex-col items-center">
+                <span class="text-lg sm:text-xl mb-1">💊</span><span>治療</span>
+            </button>
+            <button onclick="interact('sleep')" id="btn-sleep" class="game-btn w-[46%] bg-indigo-300 text-indigo-900 text-xs sm:text-sm font-bold py-2 sm:py-3 rounded-xl flex flex-col items-center">
+                <span class="text-lg sm:text-xl mb-1">🌙</span><span>睡覺</span>
+            </button>
+        </div>
+       
+        <div class="mt-4 text-pink-800 font-black opacity-60 tracking-[0.2em] text-xs">TAMAGOTCHI</div>
+    </div>
+
+    <script>
+        const MAX_STAT = 100;
+        const TICK_RATE = 1000; // 每 1 秒結算一次
+       
+        let stats = { hunger: 100, happiness: 100, health: 100, sleep: 100 };
+        let isDead = false;
+        let isInteracting = false;
+        let sleepingMode = false;
+       
+        // Timer 變數 (必須在重新開始與切換狀態時全部清除以防卡死)
+        let gameLoop, walkLoop;
+        let poopTimers = [];
+        let interactionTimeout = null;
+        let sleepTimer = null;
+
+        // DOM 元素
+        const domBars = {
+            hunger: document.getElementById('bar-hunger'),
+            happiness: document.getElementById('bar-happiness'),
+            health: document.getElementById('bar-health'),
+            sleep: document.getElementById('bar-sleep')
+        };
+        const petContainer = document.getElementById('pet-container');
+        const petFlipWrapper = document.getElementById('pet-flip-wrapper');
+        const petSvg = document.getElementById('pet-svg');
+        const statusMsgEl = document.getElementById('status-message');
+        const roomWall = document.getElementById('room-wall');
+        const roomFloor = document.getElementById('room-floor');
+        const roomArea = document.getElementById('room-area');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const deathReasonEl = document.getElementById('death-reason');
+        const buttons = document.querySelectorAll('.game-btn');
+
+        // --- 對話泡泡更新函式 ---
+        function updateStatusMessage(msg) {
+            if (!statusMsgEl) return;
+            statusMsgEl.textContent = msg;
+            // 輕微縮放提示動畫
+            statusMsgEl.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                if (statusMsgEl) statusMsgEl.style.transform = 'scale(1)';
+            }, 150);
+        }
+
+        // --- 核心遊戲迴圈 ---
+        function startGame() {
+            // 1. 清除所有殘留的計時器與迴圈 (避免卡死與重疊)
+            clearInterval(gameLoop);
+            clearInterval(walkLoop);
+            clearTimeout(interactionTimeout);
+            clearTimeout(sleepTimer);
+            poopTimers.forEach(timer => clearTimeout(timer));
+            poopTimers = [];
+
+            // 2. 清除 DOM 上的殘留物件
+            document.querySelectorAll('.poop-item, .fly-item, .temp-item, .zzz-particle').forEach(el => el.remove());
+
+            // 3. 重置狀態數值
+            stats = { hunger: 100, happiness: 100, health: 100, sleep: 100 };
+            isDead = false;
+            isInteracting = false;
+            sleepingMode = false;
+           
+            // 4. 重置視覺與 UI
+            petSvg.setAttribute('data-state', 'idle');
+            petSvg.classList.remove('is-eating', 'is-playing');
+            petSvg.style.transform = 'none';
+           
+            roomWall.style.backgroundColor = '#fef08a';
+            roomFloor.style.backgroundColor = '#fcd34d';
+            document.querySelector('.window').style.background = '#bae6fd';
+            roomWall.style.filter = 'none';
+            roomFloor.style.filter = 'none';
+
+            gameOverScreen.classList.add('hidden');
+            petContainer.style.left = '50%';
+            petFlipWrapper.classList.remove('is-flipped');
+            document.getElementById('btn-sleep').querySelector('span:last-child').textContent = '睡覺';
+           
+            buttons.forEach(btn => btn.disabled = false);
+            updateUI();
+            updateStatusMessage("你好呀！");
+           
+            // 5. 啟動新迴圈
+            gameLoop = setInterval(tick, TICK_RATE);
+            walkLoop = setInterval(randomWalk, 3000);
+        }
+
+        // --- 定時處理邏輯 ---
+        function tick() {
+            if (isDead) return;
+
+            // 睡覺與清醒的數值變化
+            if (sleepingMode) {
+                stats.sleep += 10;
+                stats.hunger -= 0.5;
+                if (stats.sleep >= MAX_STAT) wakeUp();
+            } else {
+                stats.hunger -= 1.5;
+                stats.happiness -= 1.5;
+                stats.sleep -= 0.8;
+               
+                // 如果太餓、太累或心情太差，健康下降
+                if (stats.hunger < 30 || stats.sleep < 30 || stats.happiness < 30) stats.health -= 1.5;
+            }
+
+            // 蒼蠅的健康懲罰 (每隻蒼蠅每秒扣除健康)
+            const flyCount = document.querySelectorAll('.fly-item').length;
+            if (flyCount > 0) {
+                stats.health -= (flyCount * 1.5);
+                if (!sleepingMode && !isInteracting && Math.random() < 0.3) {
+                    updateStatusMessage("嗡嗡嗡... 好嘈 🪰");
+                }
+            }
+
+            // 大便機制：若飽食度 >= 90 且沒睡覺，每秒有 15% 機率大便
+            if (!sleepingMode && stats.hunger >= 90 && Math.random() < 0.15) {
+                spawnPoop();
+            }
+
+            clampStats();
+            updateUI();
+            checkState();
+        }
+
+        function clampStats() {
+            for (let key in stats) {
+                if (stats[key] > MAX_STAT) stats[key] = MAX_STAT;
+                if (stats[key] < 0) stats[key] = 0;
+            }
+        }
+
+        // --- 閒置走動 ---
+        function randomWalk() {
+            if (isDead || isInteracting || sleepingMode) return;
+            if (Math.random() < 0.2) return; // 20% 機率原地發呆
+
+            const minX = 15;
+            const maxX = 85;
+            const newLeft = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
+           
+            const currentLeft = parseFloat(petContainer.style.left) || 50;
+            if (newLeft < currentLeft) {
+                petFlipWrapper.classList.add('is-flipped');
+            } else {
+                petFlipWrapper.classList.remove('is-flipped');
+            }
+
+            petContainer.style.left = `${newLeft}%`;
+            petContainer.style.bottom = `${Math.floor(Math.random() * 8) + 18}px`;
+        }
+
+        // --- 動作互動 ---
+        function interact(action) {
+            if (isDead) return;
+            if (sleepingMode && action !== 'sleep') {
+                updateStatusMessage("噓... 正在睡覺");
+                return;
+            }
+
+            isInteracting = true;
+            clearTimeout(interactionTimeout);
+
+            if (action === 'feed') {
+                updateStatusMessage("好好吃！");
+                spawnTempItem('🍔', 40);
+                walkTo(45, () => {
+                    if (isDead) return;
+                    petSvg.setAttribute('data-state', 'eating');
+                    petSvg.classList.add('is-eating');
+                    stats.hunger += 35;
+                    interactionTimeout = setTimeout(() => {
+                        petSvg.classList.remove('is-eating');
+                        endInteraction();
+                    }, 2000);
+                });
+            }
+            else if (action === 'play') {
+                updateStatusMessage("太好玩了！");
+                spawnTempItem('⚽', 65);
+                walkTo(55, () => {
+                    if (isDead) return;
+                    petSvg.setAttribute('data-state', 'playing');
+                    petSvg.classList.add('is-playing');
+                    stats.happiness += 35;
+                    stats.sleep -= 5;
+                    stats.hunger -= 5;
+                    interactionTimeout = setTimeout(() => {
+                        petSvg.classList.remove('is-playing');
+                        endInteraction();
+                    }, 2000);
+                });
+            }
+            else if (action === 'heal') {
+                if (stats.health >= 90) {
+                    updateStatusMessage("我很健康喔！");
+                    isInteracting = false;
+                    return;
+                }
+                stats.health += 40;
+                petSvg.setAttribute('data-state', 'idle');
+                updateStatusMessage("吃完藥，感覺好多了！✨");
+                interactionTimeout = setTimeout(endInteraction, 1500);
+            }
+            else if (action === 'clean') {
+                cleanRoom();
+                updateStatusMessage("房間變乾淨了！✨");
+                stats.happiness += 10;
+                interactionTimeout = setTimeout(endInteraction, 1000);
+            }
+            else if (action === 'sleep') {
+                if (sleepingMode) wakeUp();
+                else goSleep();
+            }
+        }
+
+        function walkTo(targetPercent, callback) {
+            const currentLeft = parseFloat(petContainer.style.left) || 50;
+            if (targetPercent < currentLeft) petFlipWrapper.classList.add('is-flipped');
+            else petFlipWrapper.classList.remove('is-flipped');
+
+            petContainer.style.left = `${targetPercent}%`;
+            petContainer.style.bottom = `20px`;
+
+            interactionTimeout = setTimeout(callback, 800);
+        }
+
+        function spawnTempItem(emoji, leftPercent) {
+            const item = document.createElement('div');
+            item.textContent = emoji;
+            item.className = 'temp-item absolute text-4xl z-10 transition-opacity duration-300 drop-shadow-md';
+            item.style.left = `${leftPercent}%`;
+            item.style.bottom = '20px';
+            roomArea.appendChild(item);
+        }
+
+        function endInteraction() {
+            document.querySelectorAll('.temp-item').forEach(el => {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 300);
+            });
+            if (!isDead) {
+                isInteracting = false;
+                clampStats();
+                updateUI();
+                checkState();
+            }
+        }
+
+        // --- 便便與蒼蠅機制 ---
+        function spawnPoop() {
+            const poop = document.createElement('div');
+            poop.textContent = '💩';
+            poop.className = 'poop-item absolute text-2xl z-0 poop-anim drop-shadow-sm';
+           
+            const currentLeft = petContainer.style.left || '50%';
+            poop.style.left = currentLeft;
+            poop.style.bottom = `${Math.floor(Math.random() * 15) + 5}px`;
+           
+            roomArea.appendChild(poop);
+
+            const tId = setTimeout(() => {
+                if (poop.parentNode && !isDead) {
+                    spawnFly(poop.style.left, poop.style.bottom);
+                }
+            }, 10000);
+            poopTimers.push(tId);
+        }
+
+        function spawnFly(startX, startY) {
+            const fly = document.createElement('div');
+            fly.textContent = '🪰';
+            fly.className = 'fly-item absolute text-xl z-20 fly-anim';
+            fly.style.left = startX;
+            fly.style.bottom = startY;
+            roomArea.appendChild(fly);
+        }
+
+        function cleanRoom() {
+            // 清理便便與蒼蠅 (淡出後移除)
+            document.querySelectorAll('.poop-item, .fly-item').forEach(el => {
+                el.style.transition = 'all 0.3s';
+                el.style.opacity = '0';
+                el.style.transform = 'scale(0.3)';
+                setTimeout(() => el.remove(), 300);
+            });
+            poopTimers.forEach(timer => clearTimeout(timer));
+            poopTimers = [];
+        }
+
+        // --- 睡覺機制 ---
+        function goSleep() {
+            sleepingMode = true;
+            walkTo(80, () => {
+                if (isDead || !sleepingMode) return;
+                petSvg.setAttribute('data-state', 'sleep');
+                roomWall.style.backgroundColor = '#1e293b';
+                document.querySelector('.window').style.background = '#0f172a';
+                roomFloor.style.backgroundColor = '#334155';
+               
+                updateStatusMessage("呼嚕呼嚕...");
+                document.getElementById('btn-sleep').querySelector('span:last-child').textContent = '喚醒';
+                spawnZzz();
+                isInteracting = false;
+            });
+        }
+
+        function spawnZzz() {
+            if (!sleepingMode || isDead) return;
+            const zzz = document.createElement('div');
+            zzz.textContent = 'z';
+            zzz.className = 'zzz-particle absolute font-black text-indigo-400 text-lg pointer-events-none';
+            zzz.style.left = '65%';
+            zzz.style.top = '0px';
+            zzz.style.transform = 'translateY(-10px) scale(1)';
+            zzz.style.opacity = '1';
+            zzz.style.transition = 'all 1.2s ease-out';
+           
+            petContainer.appendChild(zzz);
+
+            requestAnimationFrame(() => {
+                zzz.style.transform = 'translateY(-40px) scale(1.6)';
+                zzz.style.opacity = '0';
+            });
+
+            setTimeout(() => zzz.remove(), 1200);
+
+            clearTimeout(sleepTimer);
+            if (sleepingMode && !isDead) {
+                sleepTimer = setTimeout(spawnZzz, 1200);
+            }
+        }
+
+        function wakeUp() {
+            sleepingMode = false;
+            clearTimeout(sleepTimer);
+            document.querySelectorAll('.zzz-particle').forEach(el => el.remove());
+
+            roomWall.style.backgroundColor = '#fef08a';
+            document.querySelector('.window').style.background = '#bae6fd';
+            roomFloor.style.backgroundColor = '#fcd34d';
+            document.getElementById('btn-sleep').querySelector('span:last-child').textContent = '睡覺';
+           
+            petSvg.setAttribute('data-state', 'happy');
+            updateStatusMessage("早安！睡飽了！");
+            walkTo(50, () => { isInteracting = false; checkState(); });
+        }
+
+        // --- 系統更新 ---
+        function updateUI() {
+            for (let key in stats) {
+                const val = stats[key];
+                const bar = domBars[key];
+                bar.style.width = `${val}%`;
+                if (val > 50) bar.className = 'bg-green-500 h-2 sm:h-2.5 rounded-full stat-bar';
+                else if (val > 25) bar.className = 'bg-yellow-400 h-2 sm:h-2.5 rounded-full stat-bar';
+                else bar.className = 'bg-red-500 h-2 sm:h-2.5 rounded-full stat-bar animate-pulse';
+            }
+        }
+
+        function checkState() {
+            if (isDead) return;
+
+            // 死亡判定：任何數值歸零
+            if (stats.hunger <= 0) return die("餓死了 😭");
+            if (stats.happiness <= 0) return die("憂鬱而死 💔");
+            if (stats.health <= 0) return die("病死了 🤒 (房間太髒了?)");
+            if (stats.sleep <= 0) return die("過勞猝死 😵");
+
+            if (isInteracting || sleepingMode) return;
+
+            // 表情判定
+            let lowestKey = Object.keys(stats).reduce((a, b) => stats[a] < stats[b] ? a : b);
+            let lowestVal = stats[lowestKey];
+
+            if (lowestVal <= 30) {
+                if (lowestKey === 'health') { petSvg.setAttribute('data-state', 'sick'); updateStatusMessage("咳咳..."); }
+                else if (lowestKey === 'hunger') { petSvg.setAttribute('data-state', 'sad'); updateStatusMessage("肚子好餓..."); }
+                else if (lowestKey === 'sleep') { petSvg.setAttribute('data-state', 'sleep'); updateStatusMessage("好眼瞓喔..."); }
+                else if (lowestKey === 'happiness') { petSvg.setAttribute('data-state', 'sad'); updateStatusMessage("好無聊..."); }
+            } else if (stats.happiness >= 80 && stats.hunger >= 80) {
+                petSvg.setAttribute('data-state', 'happy');
+                updateStatusMessage("今天心情真好！");
+            } else {
+                petSvg.setAttribute('data-state', 'idle');
+                if (Math.random() < 0.2) updateStatusMessage("發呆中...");
+            }
+        }
+
+        // --- 死亡邏輯 ---
+        function die(reason) {
+            isDead = true;
+           
+            // 停下所有背景運作
+            clearInterval(gameLoop);
+            clearInterval(walkLoop);
+            clearTimeout(interactionTimeout);
+            clearTimeout(sleepTimer);
+            poopTimers.forEach(timer => clearTimeout(timer));
+            buttons.forEach(btn => btn.disabled = true);
+           
+            // 關閉所有動作狀態，設定為 dead
+            petSvg.classList.remove('is-eating', 'is-playing', 'pet-idle');
+            petSvg.setAttribute('data-state', 'dead');
+           
+            // 幽靈上浮動畫
+            petSvg.style.transition = 'transform 2s ease-out';
+            petSvg.style.transform = 'translateY(-40px)';
+           
+            // 場景變灰暗
+            roomWall.style.filter = 'grayscale(100%) brightness(50%)';
+            roomFloor.style.filter = 'grayscale(100%) brightness(50%)';
+            updateStatusMessage("......");
+
+            setTimeout(() => {
+                deathReasonEl.textContent = `原因: ${reason}`;
+                gameOverScreen.classList.remove('hidden');
+            }, 1500);
+        }
+
+        // 啟動遊戲
+        function restartGame() { startGame(); }
+        window.onload = startGame;
+    </script>
+</body>
+</html>
+ 
+
